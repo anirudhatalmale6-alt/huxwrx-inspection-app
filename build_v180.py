@@ -190,6 +190,46 @@ assert c == 5, f"Gallery Title in subjects: expected 5, got {c}"
 yaml_mod = yaml_mod.replace(GALLERY_TITLE_OLD, GALLERY_TITLE_NEW)
 print(f"[YAML] Email subjects -> Lot Number: 5 matches replaced")
 
+# --- MATH VALIDATION: Accept/Reject numbers cannot exceed Quantity Received ---
+# Insert validation after Form.Valid check, before NCR check
+# Pattern: the transition from Form.Valid error to NCR check
+MATH_VAL_OLD = (
+    b'Notify("Required fields are highlighted in red.", NotificationType.Error), '
+    b'If(And(DataCardValue25.Selected.Value = "Fail", IsBlank(DataCardValue41.Text), Form1.Mode = FormMode.Edit)'
+)
+
+MATH_VAL_NEW = (
+    b'Notify("Required fields are highlighted in red.", NotificationType.Error), '
+    b'If(And(Not(IsBlank(DataCardValue19.Text)), IsNumeric(DataCardValue19.Text), Or('
+    b'And(Not(IsBlank(DataCardValue21.Text)), IsNumeric(DataCardValue21.Text), Value(DataCardValue21.Text) > Value(DataCardValue19.Text)), '
+    b'And(Not(IsBlank(DataCardValue22.Text)), IsNumeric(DataCardValue22.Text), Value(DataCardValue22.Text) > Value(DataCardValue19.Text)), '
+    b'And(Not(IsBlank(DataCardValue37.Text)), IsNumeric(DataCardValue37.Text), Value(DataCardValue37.Text) > Value(DataCardValue19.Text)), '
+    b'And(Not(IsBlank(DataCardValue39.Text)), IsNumeric(DataCardValue39.Text), Value(DataCardValue39.Text) > Value(DataCardValue19.Text)), '
+    b'And(Not(IsBlank(DataCardValue40.Text)), IsNumeric(DataCardValue40.Text), Value(DataCardValue40.Text) > Value(DataCardValue19.Text)), '
+    b'And(Not(IsBlank(DataCardValue42.Text)), IsNumeric(DataCardValue42.Text), Value(DataCardValue42.Text) > Value(DataCardValue19.Text))'
+    b')), Notify("Accept/Reject numbers cannot exceed Quantity Received.", NotificationType.Error), '
+    b'If(And(DataCardValue25.Selected.Value = "Fail", IsBlank(DataCardValue41.Text), Form1.Mode = FormMode.Edit)'
+)
+
+c = yaml_mod.count(MATH_VAL_OLD)
+assert c == 1, f"Math validation insert: expected 1, got {c}"
+yaml_mod = yaml_mod.replace(MATH_VAL_OLD, MATH_VAL_NEW)
+print(f"[YAML] Math validation: 1 match replaced")
+
+# Need an extra closing paren for the new If() at the end of the submit formula
+# Current ends with: SubmitForm(Form1)))))
+# New needs:        SubmitForm(Form1))))))  (one extra for the math If)
+CLOSE_OLD = b"SubmitForm(Form1)))))"
+CLOSE_NEW = b"SubmitForm(Form1))))))"
+
+c = yaml_mod.count(CLOSE_OLD)
+print(f"Closing parens matches: {c}")
+assert c >= 1, f"Closing parens: expected >=1, got {c}"
+# Only replace the FIRST occurrence (the submit button, not others)
+idx = yaml_mod.find(CLOSE_OLD)
+yaml_mod = yaml_mod[:idx] + CLOSE_NEW + yaml_mod[idx + len(CLOSE_OLD):]
+print(f"[YAML] Added closing paren for math validation If()")
+
 print(f"\nYAML: {len(yaml_data)} -> {len(yaml_mod)} bytes")
 
 # ================================================================
