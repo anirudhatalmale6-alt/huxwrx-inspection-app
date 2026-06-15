@@ -299,6 +299,25 @@ for anchor, label in [(b'ProductNameNumber', 'Product Name'), (b'MinorAcceptNumb
 JSON_MAXW_OLD = b'"InvariantScript": "75"'
 json_mod = replace_in_range(json_mod, b'SelectedRecordTitle1', JSON_MAXW_OLD, b'"InvariantScript": "180"', "PO Number LayoutMaxWidth")
 
+# --- JSON: Email subject lines - replace ALL Title references ---
+# Replace RecordsGallery1.Selected.Title -> Lot Number in JSON (global replace)
+JSON_GALLERY_TITLE_OLD = b'Text(RecordsGallery1.Selected.Title)'
+JSON_GALLERY_TITLE_NEW = b'\\\"Lot# \\\" & Coalesce(Text(RecordsGallery1.Selected.\'Lot Number\'), Text(RecordsGallery1.Selected.ID))'
+
+c = json_mod.count(JSON_GALLERY_TITLE_OLD)
+print(f"JSON RecordsGallery1.Selected.Title occurrences: {c}")
+json_mod = json_mod.replace(JSON_GALLERY_TITLE_OLD, JSON_GALLERY_TITLE_NEW)
+print(f"[JSON] Gallery Title -> Lot Number: {c} matches replaced")
+
+# Replace Form1.LastSubmit.Title -> Lot Number in JSON
+JSON_LASTSUBMIT_TITLE_OLD = b"Coalesce(Text(Form1.LastSubmit.Title), \\\"ID \\\" & Text(Form1.LastSubmit.ID))"
+JSON_LASTSUBMIT_TITLE_NEW = b"\\\"Lot# \\\" & Coalesce(Text(Form1.LastSubmit.'Lot Number'), \\\"ID \\\" & Text(Form1.LastSubmit.ID))"
+
+c = json_mod.count(JSON_LASTSUBMIT_TITLE_OLD)
+print(f"JSON Form1.LastSubmit.Title occurrences: {c}")
+json_mod = json_mod.replace(JSON_LASTSUBMIT_TITLE_OLD, JSON_LASTSUBMIT_TITLE_NEW)
+print(f"[JSON] LastSubmit Title -> Lot Number: {c} matches replaced")
+
 print(f"\nJSON: {len(json_data)} -> {len(json_mod)} bytes")
 
 # ================================================================
